@@ -7,7 +7,7 @@ var HEIGHT = 480;
 var LightCycle = function(x, y, direction, color) {
   this.position = {x: x, y: y}
   this.velocity = 0.1;
-  this.state = direction;  
+  this.state = direction;
   this.color = color;
 };
 
@@ -60,7 +60,7 @@ LightCycle.prototype = {
 			case 'left':
 				this.position.x -= elapsedTime * this.velocity;
 				break;
-			case 'right': 
+			case 'right':
 				this.position.x += elapsedTime * this.velocity;
 				break;
 			case 'up':
@@ -70,7 +70,7 @@ LightCycle.prototype = {
 				this.position.y += elapsedTime * this.velocity;
 				break;
 		}
-	}	
+	}
 	
 };
 
@@ -132,6 +132,11 @@ Game.prototype = {
 		  
 		});
 		// check for collisions between cycles
+		
+		if(Math.pow(this.cycles[0].position.x - this.cycles[1].position.x, 2) + Math.pow(this.cycles[0].position.y - this.cycles[1].position.y, 2) <= 4 * 5 * 5){
+		  self.gameOver = true;
+		  //I hope
+		}
 		
 		// check for collisions between cycle and light path
 		
@@ -198,7 +203,7 @@ Game.prototype = {
 		var self = this;
 		
 		if(this.paused || this.gameOver) this.lastTime = time;
-		var elapsedTime = time - this.lastTime; 
+		var elapsedTime = time - this.lastTime;
 		this.lastTime = time;
 		
 		self.update(elapsedTime);
