@@ -92,15 +92,16 @@ var Game = function (canvasId) {
     new LightCycle(100, 240, 'right', 'red'),
 	new LightCycle(700, 240, 'left', 'blue')
   ];
+  this.gameOver = false;
+  this.winner = "None"
   
   // Timing variables
   this.startTime = 0;
   this.lastTime = 0;
   this.gameTime = 0;
-  this.gameOver = false;
   this.fps = 0;
   this.STARTING_FPS = 60;
-  this.winner = "None"
+
 }
 	
 Game.prototype = {
@@ -108,7 +109,8 @@ Game.prototype = {
 	// Update the game world.  See
 	// http://gameprogrammingpatterns.com/update-method.html
 	update: function(elapsedTime) {
-		
+		self = this;
+
 		self.gameTime = self.gameTime + (elapsedTime / 1000);
 
 		// update the cycles
@@ -133,13 +135,28 @@ Game.prototype = {
 		  }
 		  
 		});
-		// check for collisions between cycles
 		
+		// check for collisions between cycles
 		if(Math.pow(this.cycles[0].position.x - this.cycles[1].position.x, 2) + Math.pow(this.cycles[0].position.y - this.cycles[1].position.y, 2) <= 4 * 5 * 5){
 		  self.endGame.call("both")
 		}
-		
+
 		// check for collisions between cycle and light path
+		this.cycles.forEach( function(cycle) {
+
+			// Collision constants
+  			collisionPoints = { right:{x: 5, y: 0}, left:{x: -5, y: 0}, down:{x: 0, y: 5}, up:{x: 0, y: -5} };
+
+  			var pixelData = self.canvasContext.getImageData(cycle.position.x + collisionPoints[cycle.state].x, cycle.position.y + collisionPoints[cycle.state].y, 1, 1).data;
+
+  			if(pixelData[0] != 255 || pixelData[1] != 255 || pixelData[2] != 255)
+  			{
+  				if(pixelData[0] != 0 || pixelData[1] != 0 || pixelData[2] != 0)
+  				{
+  					self.endGame.call(self, cycle);
+  				}
+  			}
+		});
 		
 	},
 	
@@ -225,7 +242,7 @@ Game.prototype = {
 		var elapsedTime = time - this.lastTime;
 		this.lastTime = time;
 		
-		if(!this.gameOver) self.update(elapsedTime);
+		self.update(elapsedTime);
 		self.render(elapsedTime);
 		
 		window.requestNextAnimationFrame(
