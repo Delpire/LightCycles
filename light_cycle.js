@@ -9,6 +9,7 @@ var LightCycle = function(x, y, direction, color) {
   this.velocity = 0.1;
   this.state = direction;
   this.color = color;
+  this.score = 0;
 };
 
 LightCycle.prototype = {
@@ -99,6 +100,7 @@ var Game = function (canvasId) {
   this.gameOver = false;
   this.fps = 0;
   this.STARTING_FPS = 60;
+  this.winner = "None"
 }
 	
 Game.prototype = {
@@ -118,24 +120,23 @@ Game.prototype = {
 		this.cycles.forEach( function(cycle) {
 
 		  if(cycle.position.x - 5 <= 0){
-		  	self.gameOver = true;
+		  	self.endGame.call(self, cycle)
 		  }
 		  else if(cycle.position.x + 5 >= self.width){
-		  	self.gameOver = true;
+		  	self.endGame.call(self, cycle)
 		  }
 		  else if(cycle.position.y - 5 <= 0){
-		  	self.gameOver = true;
+		  	self.endGame.call(self, cycle)
 		  }
 		  else if(cycle.position.y + 5 >= self.height){
-		  	self.gameOver = true;
+		  	self.endGame.call(self, cycle)
 		  }
 		  
 		});
 		// check for collisions between cycles
 		
 		if(Math.pow(this.cycles[0].position.x - this.cycles[1].position.x, 2) + Math.pow(this.cycles[0].position.y - this.cycles[1].position.y, 2) <= 4 * 5 * 5){
-		  self.gameOver = true;
-		  //I hope
+		  self.endGame.call("both")
 		}
 		
 		// check for collisions between cycle and light path
@@ -164,9 +165,27 @@ Game.prototype = {
 		self.canvasContext.fillRect(5, 5, 18 + expand, 18);
 
 		// Render GUI
+
+		// Render Timer
 		self.canvasContext.fillStyle = "white";
   		self.canvasContext.font = "bold 16px Arial";
   		self.canvasContext.fillText(Math.floor(self.gameTime), 10, 20);
+
+  		self.canvasContext.fillStyle = "black";
+		self.canvasContext.fillRect(2, 460, 17, 19);
+
+		// Render player 1 score.
+		self.canvasContext.fillStyle = "red";
+  		self.canvasContext.font = "20px Arial";
+  		self.canvasContext.fillText(this.cycles[0].score, 5, 477);
+
+  		self.canvasContext.fillStyle = "black";
+		self.canvasContext.fillRect(782, 460, 17, 19);
+
+		// Render player 2 score.
+		self.canvasContext.fillStyle = "cyan";
+  		self.canvasContext.font = "20px Arial";
+  		self.canvasContext.fillText(this.cycles[1].score, 785, 477);
 		
 	},
 	
@@ -206,17 +225,43 @@ Game.prototype = {
 		var elapsedTime = time - this.lastTime;
 		this.lastTime = time;
 		
-		self.update(elapsedTime);
+		if(!this.gameOver) self.update(elapsedTime);
 		self.render(elapsedTime);
 		
-		if(!this.gameOver){
-			window.requestNextAnimationFrame(
-				function(time) {
-					self.loop.call(self, time);
-				}
-			);
-		}
+		window.requestNextAnimationFrame(
+			function(time) {
+				self.loop.call(self, time);
+			}
+		);
 	},
+
+	//Ends the current game.
+	endGame: function(loser){
+	  	
+	  	//Check to see who lost. Adding one to the winner's score.
+	  	if(loser == self.cycles[0]){
+	  		self.cycles[1].score++;
+	  	}
+	  	else if(loser == self.cycles[1]){
+	  		self.cycles[0].score++;	
+	  	}
+
+	  	self.resetGame.call(self);
+	},
+
+	resetGame: function(){
+		//Clear the canvas.
+	  	self.canvasContext.fillStyle = "white";
+		self.canvasContext.fillRect(0, 0, 800, 480);
+
+		//Reset the cycles' positions and states.
+		self.cycles[0].position.x = 100;
+		self.cycles[0].position.y = 240;
+		self.cycles[0].state = 'right';
+		self.cycles[1].position.x = 700;
+		self.cycles[1].position.y = 240;
+		self.cycles[1].state = 'left';
+	}
 }
 
 function convertDirection(code){
