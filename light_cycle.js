@@ -80,9 +80,12 @@ var Game = function (canvasId) {
   var myself = this;
   
   // Rendering variables
-  this.screen = document.getElementById(canvasId);
-  this.screenContext = this.screen.getContext('2d');
+  this.canvas = document.getElementById(canvasId);
+  this.canvasContext = this.canvas.getContext('2d');
   
+  this.width = this.canvas.width;
+  this.height = this.canvas.height;
+
   // Game variables
   this.cycles = [
     new LightCycle(100, 240, 'right', 'red'),
@@ -93,6 +96,7 @@ var Game = function (canvasId) {
   this.startTime = 0;
   this.lastTime = 0;
   this.gameTime = 0;
+  this.gameOver = false;
   this.fps = 0;
   this.STARTING_FPS = 60;
 }
@@ -111,7 +115,22 @@ Game.prototype = {
 		});
 		
 		// check for collisions with walls
-		
+		this.cycles.forEach( function(cycle) {
+
+		  if(cycle.position.x - 5 <= 0){
+		  	self.gameOver = true;
+		  }
+		  else if(cycle.position.x + 5 >= self.width){
+		  	self.gameOver = true;
+		  }
+		  else if(cycle.position.y - 5 <= 0){
+		  	self.gameOver = true;
+		  }
+		  else if(cycle.position.y + 5 >= self.height){
+		  	self.gameOver = true;
+		  }
+		  
+		});
 		// check for collisions between cycles
 		
 		// check for collisions between cycle and light path
@@ -123,7 +142,7 @@ Game.prototype = {
 		
 		// Render game objects
 		this.cycles.forEach( function(cycle) {
-			cycle.render(self.screenContext);
+			cycle.render(self.canvasContext);
 		});
 		
 		var expand = 0;
@@ -133,16 +152,16 @@ Game.prototype = {
 		}
 		
 		if(self.gameTime >= 100){
-			expand = 10;
+			expand = 20;
 		}
 
-		self.screenContext.fillStyle = "black";
-		self.screenContext.fillRect(5, 5, 18 + expand, 18);
+		self.canvasContext.fillStyle = "black";
+		self.canvasContext.fillRect(5, 5, 18 + expand, 18);
 
 		// Render GUI
-		self.screenContext.fillStyle = "white";
-  		self.screenContext.font = "bold 16px Arial";
-  		self.screenContext.fillText(Math.floor(self.gameTime), 10, 20);
+		self.canvasContext.fillStyle = "white";
+  		self.canvasContext.font = "bold 16px Arial";
+  		self.canvasContext.fillText(Math.floor(self.gameTime), 10, 20);
 		
 	},
 	
@@ -185,11 +204,13 @@ Game.prototype = {
 		self.update(elapsedTime);
 		self.render(elapsedTime);
 		
-		window.requestNextAnimationFrame(
-			function(time) {
-				self.loop.call(self, time);
-			}
-		);
+		if(!this.gameOver){
+			window.requestNextAnimationFrame(
+				function(time) {
+					self.loop.call(self, time);
+				}
+			);
+		}
 	},
 }
 
