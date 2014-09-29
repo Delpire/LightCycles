@@ -100,8 +100,9 @@ var Game = function (canvasId) {
 	new LightCycle(700, 240, 'left', 'blue')
   ];
   this.gameOver = false;
+  this.isPlaying = false;
   this.winner = "None";
-  this.state = "init";
+  this.stay = true;
   
   // Timing variables
   this.startTime = 0;
@@ -144,7 +145,7 @@ Game.prototype = {
 		  
 		});
 		
-		if(self.state != "end"){
+		if(self.isPlaying){
   		// check for collisions between cycles
   		if(Math.pow(this.cycles[0].position.x - this.cycles[1].position.x, 2) + Math.pow(this.cycles[0].position.y - this.cycles[1].position.y, 2) <= 4 * 5 * 5){
   		  self.endGame.call("both")
@@ -152,7 +153,7 @@ Game.prototype = {
 	  }
 
 
-    if(self.state != "end"){
+    if(self.isPlaying){
   		// check for collisions between cycle and light path
   		this.cycles.forEach( function(cycle) {
   
@@ -228,13 +229,9 @@ Game.prototype = {
 	{
 	  if(e.keyCode == 32 || e.keyCode == 13){
 	    
-	    if(this.state == "init"){
-	      this.state = "playing";
-	      this.clearCanvas.call(this);
-	    }
-	    if(this.state == "end"){
-	      this.state = "playing";
-	      this.resetGame.call(this);
+	    if(!this.isPlaying){
+	      this.stay = false;
+	      this.resetGame(this);
 	    }
 	    
 	  }
@@ -260,35 +257,77 @@ Game.prototype = {
 		
 		window.requestNextAnimationFrame(
 			function(time) {
-				self.loop.call(self, time);
+			  self.startLoop.call(self, time);
+			}
+		);
+	},
+	
+	// Loop before game starts
+	startLoop: function(time){
+	  var self = this;
+	
+	  this.lastTime = time;
+	
+	  self.renderTitle();
+	
+	  window.requestNextAnimationFrame(
+			function(time) {
+				if(self.stay){
+				  self.startLoop.call(self, time);
+				}
+			  else{
+			    self.stay = true;
+			    self.isPlaying = true;
+			    self.clearCanvas(this);
+			    self.playLoop.call(self, time);
+			  }
 			}
 		);
 	},
 	
 	// The game loop.  See
 	// http://gameprogrammingpatterns.com/game-loop.html
-	loop: function(time) {
+	playLoop: function(time) {
 		var self = this;
 		
 		if(this.paused || this.gameOver) this.lastTime = time;
 		var elapsedTime = time - this.lastTime;
 		this.lastTime = time;
 		
-		if(this.state == "init"){
-		  self.renderTitle.call(this);
-		}
-		else if(this.state == "playing"){
-		  self.update(elapsedTime);
-		  self.render(elapsedTime);
-		}
-		else if(this.state == "end"){
-		  self.renderEnd.call(this);
-		}
-		
-		
+	  self.update(elapsedTime);
+	  self.render(elapsedTime);
+
 		window.requestNextAnimationFrame(
 			function(time) {
-				self.loop.call(self, time);
+				if(self.stay){
+				  self.playLoop.call(self, time);
+				}
+			  else{
+			    self.stay = true;
+			    self.endLoop.call(self, time);
+			  }
+			}
+		);
+	},
+	
+	// Loops when a round ends.
+	endLoop: function(time){
+	  var self = this;
+	  
+	  this.lastTime = time;
+	  
+	  self.renderEnd();
+	  
+	  window.requestNextAnimationFrame(
+			function(time) {
+				if(self.stay){
+				  self.endLoop.call(self, time);
+				}
+			  else{
+			    self.stay = true;
+			    self.isPlaying = true;
+			    self.playLoop.call(self, time);
+			  }
 			}
 		);
 	},
@@ -308,21 +347,24 @@ Game.prototype = {
 	  		self.winner = "Red bike wins! Hit space or enter for next round."
 	  	}
 	  	
-	  	self.state = "end";
+	  	
+	  	self.isPlaying = false;
+	  	self.stay = false;
 	},
 
   // Restarts the game.
 	resetGame: function(){
 	  
-		self.clearCanvas.call(self);
-
+		this.clearCanvas(this);
+    this.gameTime = 0;
+		
 		//Reset the cycles' positions and states.
-		self.cycles[0].position.x = 100;
-		self.cycles[0].position.y = 240;
-		self.cycles[0].state = 'right';
-		self.cycles[1].position.x = 700;
-		self.cycles[1].position.y = 240;
-		self.cycles[1].state = 'left';
+		this.cycles[0].position.x = 100;
+		this.cycles[0].position.y = 240;
+		this.cycles[0].state = 'right';
+		this.cycles[1].position.x = 700;
+		this.cycles[1].position.y = 240;
+		this.cycles[1].state = 'left';
 	},
 	
 	// Renders the title screen.
