@@ -93,7 +93,8 @@ var Game = function (canvasId) {
 	new LightCycle(700, 240, 'left', 'blue')
   ];
   this.gameOver = false;
-  this.winner = "None"
+  this.winner = "None";
+  this.state = "init";
   
   // Timing variables
   this.startTime = 0;
@@ -136,27 +137,32 @@ Game.prototype = {
 		  
 		});
 		
-		// check for collisions between cycles
-		if(Math.pow(this.cycles[0].position.x - this.cycles[1].position.x, 2) + Math.pow(this.cycles[0].position.y - this.cycles[1].position.y, 2) <= 4 * 5 * 5){
-		  self.endGame.call("both")
-		}
+		if(self.state != "end"){
+  		// check for collisions between cycles
+  		if(Math.pow(this.cycles[0].position.x - this.cycles[1].position.x, 2) + Math.pow(this.cycles[0].position.y - this.cycles[1].position.y, 2) <= 4 * 5 * 5){
+  		  self.endGame.call("both")
+  		}
+	  }
 
-		// check for collisions between cycle and light path
-		this.cycles.forEach( function(cycle) {
 
-			// Collision constants
-  			collisionPoints = { right:{x: 5, y: 0}, left:{x: -5, y: 0}, down:{x: 0, y: 5}, up:{x: 0, y: -5} };
-
-  			var pixelData = self.canvasContext.getImageData(cycle.position.x + collisionPoints[cycle.state].x, cycle.position.y + collisionPoints[cycle.state].y, 1, 1).data;
-
-  			if(pixelData[0] != 255 || pixelData[1] != 255 || pixelData[2] != 255)
-  			{
-  				if(pixelData[0] != 0 || pixelData[1] != 0 || pixelData[2] != 0)
-  				{
-  					self.endGame.call(self, cycle);
-  				}
-  			}
-		});
+    if(self.state != "end"){
+  		// check for collisions between cycle and light path
+  		this.cycles.forEach( function(cycle) {
+  
+  			// Collision constants
+    			collisionPoints = { right:{x: 5, y: 0}, left:{x: -5, y: 0}, down:{x: 0, y: 5}, up:{x: 0, y: -5} };
+  
+    			var pixelData = self.canvasContext.getImageData(cycle.position.x + collisionPoints[cycle.state].x, cycle.position.y + collisionPoints[cycle.state].y, 1, 1).data;
+  
+    			if(pixelData[0] != 255 || pixelData[1] != 255 || pixelData[2] != 255)
+    			{
+    				if(pixelData[0] !== 0 || pixelData[1] !== 0 || pixelData[2] !== 0)
+    				{
+    					self.endGame.call(self, cycle);
+    				}
+    			}
+  		});
+    }
 		
 	},
 	
@@ -185,29 +191,42 @@ Game.prototype = {
 
 		// Render Timer
 		self.canvasContext.fillStyle = "white";
-  		self.canvasContext.font = "bold 16px Arial";
-  		self.canvasContext.fillText(Math.floor(self.gameTime), 10, 20);
+    self.canvasContext.font = "bold 16px Arial";
+  	self.canvasContext.fillText(Math.floor(self.gameTime), 10, 20);
 
-  		self.canvasContext.fillStyle = "black";
+  	self.canvasContext.fillStyle = "black";
 		self.canvasContext.fillRect(2, 460, 17, 19);
 
 		// Render player 1 score.
 		self.canvasContext.fillStyle = "red";
-  		self.canvasContext.font = "20px Arial";
-  		self.canvasContext.fillText(this.cycles[0].score, 5, 477);
+  	self.canvasContext.font = "20px Arial";
+  	self.canvasContext.fillText(this.cycles[0].score, 5, 477);
 
-  		self.canvasContext.fillStyle = "black";
+  	self.canvasContext.fillStyle = "black";
 		self.canvasContext.fillRect(782, 460, 17, 19);
 
 		// Render player 2 score.
 		self.canvasContext.fillStyle = "cyan";
-  		self.canvasContext.font = "20px Arial";
-  		self.canvasContext.fillText(this.cycles[1].score, 785, 477);
+  	self.canvasContext.font = "20px Arial";
+  	self.canvasContext.fillText(this.cycles[1].score, 785, 477);
 		
 	},
 	
 	keyDown: function(e)
 	{
+	  if(e.keyCode == 32 || e.keyCode == 13){
+	    
+	    if(this.state == "init"){
+	      this.state = "playing";
+	      this.clearCanvas.call(this);
+	    }
+	    if(this.state == "end"){
+	      this.state = "playing";
+	      this.resetGame.call(this);
+	    }
+	    
+	  }
+	  
 		// If the keycode is an arrow key, turn cycle 1.
 		// Otherwise, if it is w, a, s, or d, turn cycle 2.
 		if(e.keyCode > 36 && e.keyCode < 41){
@@ -242,8 +261,17 @@ Game.prototype = {
 		var elapsedTime = time - this.lastTime;
 		this.lastTime = time;
 		
-		self.update(elapsedTime);
-		self.render(elapsedTime);
+		if(this.state == "init"){
+		  self.renderTitle.call(this);
+		}
+		else if(this.state == "playing"){
+		  self.update(elapsedTime);
+		  self.render(elapsedTime);
+		}
+		else if(this.state == "end"){
+		  self.renderEnd.call(this);
+		}
+		
 		
 		window.requestNextAnimationFrame(
 			function(time) {
@@ -255,21 +283,24 @@ Game.prototype = {
 	//Ends the current game.
 	endGame: function(loser){
 	  	
+	  	self.winner = "Nobody wins! Hit space or enter for next round."
+	  	
 	  	//Check to see who lost. Adding one to the winner's score.
 	  	if(loser == self.cycles[0]){
 	  		self.cycles[1].score++;
+	  		self.winner = "Blue bike wins! Hit space or enter for next round."
 	  	}
 	  	else if(loser == self.cycles[1]){
-	  		self.cycles[0].score++;	
+	  		self.cycles[0].score++;
+	  		self.winner = "Red bike wins! Hit space or enter for next round."
 	  	}
-
-	  	self.resetGame.call(self);
+	  	
+	  	self.state = "end";
 	},
 
 	resetGame: function(){
-		//Clear the canvas.
-	  	self.canvasContext.fillStyle = "white";
-		self.canvasContext.fillRect(0, 0, 800, 480);
+	  
+		self.clearCanvas.call(self);
 
 		//Reset the cycles' positions and states.
 		self.cycles[0].position.x = 100;
@@ -278,6 +309,35 @@ Game.prototype = {
 		self.cycles[1].position.x = 700;
 		self.cycles[1].position.y = 240;
 		self.cycles[1].state = 'left';
+	},
+	
+	renderTitle: function(){
+	  
+    this.clearCanvas.call(this);
+	  
+	  // Render Title.
+		this.canvasContext.fillStyle = "black";
+  	this.canvasContext.font = "20px Arial";
+  	this.canvasContext.fillText("Press space or enter to Play", 250, 250);
+	},
+	
+	renderEnd: function(){
+	  
+    // Render winner square.
+	  this.canvasContext.fillStyle = "black";
+		this.canvasContext.fillRect(190, 6, 440, 25);
+		
+	  // Render winner text.
+		this.canvasContext.fillStyle = "white";
+  	this.canvasContext.font = "20px Arial";
+  	this.canvasContext.fillText(this.winner, 200, 25);
+	},
+	
+	clearCanvas: function(){
+	  
+	  //Clear the canvas.
+	  this.canvasContext.fillStyle = "white";
+		this.canvasContext.fillRect(0, 0, 800, 480);
 	}
 }
 
@@ -286,28 +346,20 @@ function convertDirection(code){
 	switch(code) {
 		case 37: // LEFT
 			return 0;
-			break;
 		case 38: // UP
 			return 1;
-			break;
 		case 39: // RIGHT
 			return 2;
-			break;
 		case 40: // DOWN
 			return 3;
-			break;
 		case 87: // W
 			return 1;
-			break;
 		case 65: // A
 			return 0;
-			break;
 		case 83: // S
 			return 3;
-			break;
 		case 68: // D
 			return 2;
-			break;
 	}
 }
 
