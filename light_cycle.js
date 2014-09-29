@@ -17,6 +17,9 @@ LightCycle.prototype = {
 	y: 0,
 	velocity: 0,
 
+  // Turns the bike in the direction
+  // passed into the function if the
+  // bike is capable of turning that way.
 	turn: function(dir){
 
 		switch(dir){
@@ -44,6 +47,7 @@ LightCycle.prototype = {
 
 	},
 	
+	// Renders the bike to the screen.
 	render: function(context) {
 		context.save();
 		context.fillStyle = this.color;
@@ -53,6 +57,9 @@ LightCycle.prototype = {
 		context.restore();
 	},
 	
+	// Updates the position of the bike based
+	// on the direction the bike is facing and
+	// the time that has elapsed since the last update.
 	update: function(elapsedTime) {
 	
 		// Cycle state
@@ -166,6 +173,8 @@ Game.prototype = {
 		
 	},
 	
+	// Renders each of the bikes, the game time,
+	// and the scores.
 	render: function(elapsedTime) {
 		self = this;
 		
@@ -212,6 +221,9 @@ Game.prototype = {
 		
 	},
 	
+	// Event handler for when a key is pressed.
+	// Either starts the game, restarts a round,
+	// or changes the direction of a bike.
 	keyDown: function(e)
 	{
 	  if(e.keyCode == 32 || e.keyCode == 13){
@@ -238,6 +250,7 @@ Game.prototype = {
 
 	},
 	
+	// Starts the game.
 	start: function() {
 		var self = this;
     
@@ -280,7 +293,7 @@ Game.prototype = {
 		);
 	},
 
-	//Ends the current game.
+	// Ends the current game.
 	endGame: function(loser){
 	  	
 	  	self.winner = "Nobody wins! Hit space or enter for next round."
@@ -298,6 +311,7 @@ Game.prototype = {
 	  	self.state = "end";
 	},
 
+  // Restarts the game.
 	resetGame: function(){
 	  
 		self.clearCanvas.call(self);
@@ -311,6 +325,7 @@ Game.prototype = {
 		self.cycles[1].state = 'left';
 	},
 	
+	// Renders the title screen.
 	renderTitle: function(){
 	  
     this.clearCanvas.call(this);
@@ -321,6 +336,8 @@ Game.prototype = {
   	this.canvasContext.fillText("Press space or enter to Play", 250, 250);
 	},
 	
+	// Render's the winner at the end
+	// of the game.
 	renderEnd: function(){
 	  
     // Render winner square.
@@ -333,6 +350,7 @@ Game.prototype = {
   	this.canvasContext.fillText(this.winner, 200, 25);
 	},
 	
+	// Clears the canvas.
 	clearCanvas: function(){
 	  
 	  //Clear the canvas.
